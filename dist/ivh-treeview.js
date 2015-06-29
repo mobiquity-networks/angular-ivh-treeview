@@ -96,7 +96,7 @@ angular.module('ivh.treeview').directive('ivhTreeviewChildren', function() {
     template: [
       '<ul ng-if="getChildren().length" class="ivh-treeview">',
         '<li ng-repeat="child in getChildren()"',
-            'ng-hide="trvw.hasFilter() && !trvw.isVisible(child)"',
+            'ng-if="!trvw.hasFilter() || trvw.isVisible(child)"',
             'ng-class="{\'ivh-treeview-node-collapsed\': !trvw.isExpanded(child) && !trvw.isLeaf(child)}"',
             'ivh-treeview-node="child"',
             'ivh-treeview-depth="childDepth">',
@@ -137,7 +137,9 @@ angular.module('ivh.treeview').directive('ivhTreeviewNode', ['ivhTreeviewCompile
           scope.childDepth = scope.depth + 1;
 
           // Expand/collapse the node as dictated by the expandToDepth property
-          trvw.expand(node, trvw.isInitiallyExpanded(scope.depth));
+          if (!trvw._isInitalized) {
+            trvw.expand(node, trvw.isInitiallyExpanded(scope.depth));
+          }
 
           /**
            * @todo Provide a way to opt out of this
@@ -547,6 +549,9 @@ angular.module('ivh.treeview').directive('ivhTreeview', ['ivhTreeviewMgr', funct
           Infinity : localOpts.expandToDepth;
         return depth < expandTo;
       };
+      // To avoid initial behaviour when expanding/collapsing all
+      // with ng-if
+      trvw._isInitalized = true;
 
       /**
        * Returns `true` if `node` is a leaf node
@@ -573,6 +578,7 @@ angular.module('ivh.treeview').directive('ivhTreeview', ['ivhTreeviewMgr', funct
        *
        * Handler will get a reference to `node` and the root of the tree.
        *
+      {{node.__ivhTreeviewExpanded}}
        * @param {Object} node Tree node to pass to the handler
        * @private
        */
@@ -594,13 +600,15 @@ angular.module('ivh.treeview').directive('ivhTreeview', ['ivhTreeviewMgr', funct
         ($scope.changeHandler || angular.noop)(node, isSelected, $scope.root);
       };
     }],
-    link: function(scope, element, attrs) {
+    link: function(scope, element, attrs, trvw) {
       var opts = scope.trvw.opts();
 
       // Allow opt-in validate on startup
       if(opts.validate) {
         ivhTreeviewMgr.validate(scope.root, opts);
       }
+
+      trvw._isInitalized = true;
     },
     template: [
       '<ul class="ivh-treeview">',

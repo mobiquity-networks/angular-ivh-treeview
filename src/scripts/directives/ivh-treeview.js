@@ -283,6 +283,9 @@ angular.module('ivh.treeview').directive('ivhTreeview', ['ivhTreeviewMgr', funct
           Infinity : localOpts.expandToDepth;
         return depth < expandTo;
       };
+      // To avoid initial behaviour when expanding/collapsing all
+      // with ng-if
+      trvw._isInitalized = true;
 
       /**
        * Returns `true` if `node` is a leaf node
@@ -309,6 +312,7 @@ angular.module('ivh.treeview').directive('ivhTreeview', ['ivhTreeviewMgr', funct
        *
        * Handler will get a reference to `node` and the root of the tree.
        *
+      {{node.__ivhTreeviewExpanded}}
        * @param {Object} node Tree node to pass to the handler
        * @private
        */
@@ -330,13 +334,15 @@ angular.module('ivh.treeview').directive('ivhTreeview', ['ivhTreeviewMgr', funct
         ($scope.changeHandler || angular.noop)(node, isSelected, $scope.root);
       };
     }],
-    link: function(scope, element, attrs) {
+    link: function(scope, element, attrs, trvw) {
       var opts = scope.trvw.opts();
 
       // Allow opt-in validate on startup
       if(opts.validate) {
         ivhTreeviewMgr.validate(scope.root, opts);
       }
+
+      trvw._isInitalized = true;
     },
     template: [
       '<ul class="ivh-treeview">',
